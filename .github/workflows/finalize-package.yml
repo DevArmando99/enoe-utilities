@@ -7,6 +7,13 @@ on:
     paths:
       - ".package_payload/**"
       - ".github/workflows/finalize-package.yml"
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
@@ -17,9 +24,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out branch
+      - name: Check out package branch
         uses: actions/checkout@v4
         with:
+          ref: package-structure-v0.1
           fetch-depth: 0
 
       - name: Reconstruct package files
