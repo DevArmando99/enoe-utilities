@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enoe-utilities"
+version = "0.1.0"
+description = "Utilities for processing ENOE microdata and labor poverty analytical datasets."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Jose Armando" }
+]
+dependencies = [
+  "pandas",
+  "pyarrow",
+  "duckdb",
+  "PyYAML"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["enoe_utilities*"]
