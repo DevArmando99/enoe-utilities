@@ -190,10 +190,8 @@ enoe-utilities/
 │   ├── historical.py
 │   ├── metadata.py
 │   └── utils.py
-├── examples/
-│   └── basic_pipeline.py
-└── legacy/
-    └── funciones_auxiliares_v2.6.txt
+└── examples/
+    └── basic_pipeline.py
 ```
 
 ## Roadmap

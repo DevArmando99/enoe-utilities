@@ -3,7 +3,6 @@
 import re
 from pandas import DataFrame
 
-
 def get_pl_series(filepath: str) -> DataFrame:
     """
     Lee un CSV de Línea de Pobreza Extrema por Ingresos descargado del BIE de INEGI
@@ -69,7 +68,6 @@ def get_pl_series(filepath: str) -> DataFrame:
 
     df = DataFrame(records, columns=["Año", "Mes", "Trimestre", "Rural", "Urbano"])
     return df
-
 
 def build_lpei_quarterly_long(serie_lp):
     """
