@@ -81,8 +81,6 @@ Esto mantiene ligero el historial de Git y evita redistribuir archivos grandes d
 
 Los microdatos procesados por este pipeline corresponden a la **Encuesta Nacional de Ocupación y Empleo (ENOE)**. Su documentación técnica y metodología se encuentran en la [página oficial de la ENOE en INEGI](https://www.inegi.org.mx/programas/enoe/15ymas/).
 
-La referencia técnica adicional de INEGI proporcionada para este ejemplo es la [Encuesta Mensual de la Industria Manufacturera (EMIM), serie 2018](https://www.inegi.org.mx/programas/emim/2018/). La EMIM y la ENOE son programas estadísticos distintos; el enlace de la EMIM se conserva aquí como referencia adicional y no corresponde a la metodología de los microdatos ENOE procesados por estos notebooks.
-
 ## Nota de reproducibilidad
 
 La carpeta de Google Drive es una copia de conveniencia del ejemplo trabajado. Para investigación o producción, descarga los datos oficiales directamente de las instituciones responsables, registra la fecha y la versión de la fuente, y conserva los metadatos y paradatos generados junto con los resultados.

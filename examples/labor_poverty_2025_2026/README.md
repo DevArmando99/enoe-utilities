@@ -81,8 +81,6 @@ This keeps the Git history lightweight and avoids redistributing large survey fi
 
 The microdata used by this pipeline come from the **National Survey of Occupation and Employment (ENOE)**. Its technical documentation and methodology are available on the [official INEGI ENOE page](https://www.inegi.org.mx/programas/enoe/15ymas/).
 
-The additional INEGI technical reference supplied with this example is the [Monthly Survey of the Manufacturing Industry (EMIM), 2018 series](https://www.inegi.org.mx/programas/emim/2018/). EMIM and ENOE are different statistical programs; the EMIM link is retained here as an additional reference and is not the methodology for the ENOE microdata processed by these notebooks.
-
 ## Reproducibility note
 
 The Google Drive folder is a convenience copy of the worked example. For research or production use, obtain the official source data directly from the responsible institutions, record the download date and source version, and preserve the generated metadata and paradata alongside the results.
