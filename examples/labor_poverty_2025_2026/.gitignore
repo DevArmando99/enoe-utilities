@@ -1,0 +1,28 @@
+# Raw inputs downloaded outside Git
+data/raw/zip/*
+!data/raw/zip/.gitkeep
+data/raw/lpei/*
+!data/raw/lpei/.gitkeep
+
+# Converted and derived datasets
+data/parquet/converted/*
+!data/parquet/converted/.gitkeep
+data/parquet/merged/*
+!data/parquet/merged/.gitkeep
+data/parquet/analytical/*
+!data/parquet/analytical/.gitkeep
+data/parquet/historical/*
+!data/parquet/historical/.gitkeep
+
+# Generated outputs
+outputs/indicators/*
+!outputs/indicators/.gitkeep
+outputs/metadata/*
+!outputs/metadata/.gitkeep
+outputs/paradata/*
+!outputs/paradata/.gitkeep
+outputs/validation/*
+!outputs/validation/.gitkeep
+
+# Local notebook state
+.ipynb_checkpoints/
