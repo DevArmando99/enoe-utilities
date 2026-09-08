@@ -455,7 +455,7 @@ def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, ll
             warnings.warn(f'No fue posible registrar el paradato del merge {periodo}: {paradata_error}', RuntimeWarning, stacklevel=2)
     return result
 
-def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, periods=None, overwrite=False, reuse_existing=True, compression='zstd', strict_keys=True, stop_on_error=True, return_audit=True, *, generate_metadata=False, path_paradata='../Paradata'):
+def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, periods=None, overwrite=False, reuse_existing=True, compression='zstd', strict_keys=True, stop_on_error=True, return_audit=True, *, optional_cols_coe2=None, optional_cols_sdem=None, generate_metadata=False, path_paradata='../Paradata'):
     """
     Construye la serie temporal de Parquet unidos SDEM-COE2.
 
@@ -525,6 +525,9 @@ def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, p
     strict_keys : bool, default=True
         Detiene el merge individual si las llaves presentan
         nulos o duplicados.
+
+    optional_cols_coe2, optional_cols_sdem : list, opcional
+        Columnas con ausencia estructural permitida por periodo.
 
     stop_on_error : bool, default=True
         - True: detiene toda la serie al encontrar un error.
