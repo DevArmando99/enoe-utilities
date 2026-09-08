@@ -122,7 +122,7 @@ def resolve_parquet_columns(path_parquet, required_columns, equivalences=None, s
     result = {'path': path_parquet, 'num_rows': num_rows, 'num_columns': len(raw_columns), 'available_columns': raw_columns, 'required_columns': required_columns_norm, 'read_columns': read_columns, 'read_map': read_map, 'rename_map': rename_map, 'applied_equivalences': applied_equivalences, 'missing_columns': missing_columns, 'OK': ok}
     return result
 
-def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, overwrite=False, compression='zstd', strict_keys=True, *, generate_metadata=False, path_paradata='../Paradata'):
+def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, overwrite=False, compression='zstd', strict_keys=True, *, optional_cols_coe2=None, optional_cols_sdem=None, generate_metadata=False, path_paradata='../Paradata'):
     """
     Realiza el LEFT JOIN entre SDEM y COE2 para un trimestre
     de la ENOE y guarda el resultado directamente en Parquet.
@@ -201,18 +201,16 @@ def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, ll
         return list(dict.fromkeys(values))
 
     def build_select_expression(canonical_column, physical_column, key_columns):
-        """
-        Construye una expresión SQL para leer una columna física
-        y escribirla con su nombre canónico.
-
-        Las columnas de llave se convierten a VARCHAR, se recortan
-        y las cadenas vacías se convierten a NULL.
-        """
+        """Construye una expresión SQL para leer una columna física."""
         physical_sql = quote_identifier(physical_column)
         canonical_sql = quote_identifier(canonical_column)
         if canonical_column in key_columns:
             return f"NULLIF(TRIM(CAST({physical_sql} AS VARCHAR)), '') AS {canonical_sql}"
         return f'{physical_sql} AS {canonical_sql}'
+
+    def build_missing_optional_expression(canonical_column):
+        """Conserva una ausencia estructural como columna nula."""
+        return f'CAST(NULL AS VARCHAR) AS {quote_identifier(canonical_column)}'
 
     def safe_remove(path):
         """
@@ -244,22 +242,38 @@ def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, ll
     llave_persona = unique_ordered([str(column).strip().lower() for column in llave_persona])
     cols_sdem = unique_ordered([str(column).strip().lower() for column in cols_sdem])
     cols_coe2 = unique_ordered([str(column).strip().lower() for column in cols_coe2])
+    optional_cols_sdem = unique_ordered([str(column).strip().lower() for column in (optional_cols_sdem or [])])
+    optional_cols_coe2 = unique_ordered([str(column).strip().lower() for column in (optional_cols_coe2 or [])])
+    no_solicitadas_sdem = [column for column in optional_cols_sdem if column not in cols_sdem]
+    no_solicitadas_coe2 = [column for column in optional_cols_coe2 if column not in cols_coe2]
+    if no_solicitadas_sdem or no_solicitadas_coe2:
+        raise KeyError(f'Las columnas opcionales deben estar incluidas en sus listas de selección. SDEM: {no_solicitadas_sdem}; COE2: {no_solicitadas_coe2}')
     faltantes_llave_sdem = [column for column in llave_persona if column not in cols_sdem]
     faltantes_llave_coe2 = [column for column in llave_persona if column not in cols_coe2]
     if faltantes_llave_sdem:
         raise KeyError(f'La llave no está completa en cols_sdem: {faltantes_llave_sdem}')
     if faltantes_llave_coe2:
         raise KeyError(f'La llave no está completa en cols_coe2: {faltantes_llave_coe2}')
-    schema_sdem = resolve_parquet_columns(path_parquet=path_sdem, required_columns=cols_sdem, equivalences=equivalences, strict=True)
-    schema_coe2 = resolve_parquet_columns(path_parquet=path_coe2, required_columns=cols_coe2, equivalences=equivalences, strict=True)
+    required_sdem = [column for column in cols_sdem if column not in optional_cols_sdem]
+    required_coe2 = [column for column in cols_coe2 if column not in optional_cols_coe2]
+    schema_sdem = resolve_parquet_columns(path_parquet=path_sdem, required_columns=required_sdem, equivalences=equivalences, strict=True)
+    schema_coe2 = resolve_parquet_columns(path_parquet=path_coe2, required_columns=required_coe2, equivalences=equivalences, strict=True)
+    optional_schema_sdem = resolve_parquet_columns(path_parquet=path_sdem, required_columns=optional_cols_sdem, equivalences=equivalences, strict=False)
+    optional_schema_coe2 = resolve_parquet_columns(path_parquet=path_coe2, required_columns=optional_cols_coe2, equivalences=equivalences, strict=False)
+    for schema, optional_schema in ((schema_sdem, optional_schema_sdem), (schema_coe2, optional_schema_coe2)):
+        schema['read_map'].update(optional_schema['read_map'])
+        schema['rename_map'].update(optional_schema['rename_map'])
+        schema['applied_equivalences'].update(optional_schema['applied_equivalences'])
     select_sdem = []
     for canonical_column in cols_sdem:
-        physical_column = schema_sdem['read_map'][canonical_column]
-        select_sdem.append(build_select_expression(canonical_column=canonical_column, physical_column=physical_column, key_columns=llave_persona))
+        physical_column = schema_sdem['read_map'].get(canonical_column)
+        expression = build_missing_optional_expression(canonical_column) if physical_column is None else build_select_expression(canonical_column=canonical_column, physical_column=physical_column, key_columns=llave_persona)
+        select_sdem.append(expression)
     select_coe2 = []
     for canonical_column in cols_coe2:
-        physical_column = schema_coe2['read_map'][canonical_column]
-        select_coe2.append(build_select_expression(canonical_column=canonical_column, physical_column=physical_column, key_columns=llave_persona))
+        physical_column = schema_coe2['read_map'].get(canonical_column)
+        expression = build_missing_optional_expression(canonical_column) if physical_column is None else build_select_expression(canonical_column=canonical_column, physical_column=physical_column, key_columns=llave_persona)
+        select_coe2.append(expression)
     select_sdem_sql = ',\n                '.join(select_sdem)
     select_coe2_sql = ',\n                '.join(select_coe2)
     output_folder = path_out / periodo
@@ -441,7 +455,7 @@ def merge_period_parquet(periodo, path_coe2, path_sdem, cols_coe2, cols_sdem, ll
             warnings.warn(f'No fue posible registrar el paradato del merge {periodo}: {paradata_error}', RuntimeWarning, stacklevel=2)
     return result
 
-def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, periods=None, overwrite=False, reuse_existing=True, compression='zstd', strict_keys=True, stop_on_error=True, return_audit=True, *, generate_metadata=False, path_paradata='../Paradata'):
+def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, path_out='../Merge_de_parquet', equivalences=None, periods=None, overwrite=False, reuse_existing=True, compression='zstd', strict_keys=True, stop_on_error=True, return_audit=True, *, optional_cols_coe2=None, optional_cols_sdem=None, generate_metadata=False, path_paradata='../Paradata'):
     """
     Construye la serie temporal de Parquet unidos SDEM-COE2.
 
@@ -511,6 +525,9 @@ def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, p
     strict_keys : bool, default=True
         Detiene el merge individual si las llaves presentan
         nulos o duplicados.
+
+    optional_cols_coe2, optional_cols_sdem : list, opcional
+        Columnas con ausencia estructural permitida por periodo.
 
     stop_on_error : bool, default=True
         - True: detiene toda la serie al encontrar un error.
@@ -617,7 +634,7 @@ def build_merged_time_series(time_series, cols_coe2, cols_sdem, llave_persona, p
                     step_info = {'step_number': None, 'step_name': 'merge_sdem_coe2', 'function_name': 'merge_period_parquet', 'transformation_description': 'Reutilización de Parquet unido existente.', 'status': 'reused', 'started_at_utc': _utc_now_iso(), 'finished_at_utc': _utc_now_iso(), 'duration_seconds': 0, 'input': {'objects': [{'object_name': path_sdem.name, 'object_type': 'parquet', 'path': str(path_sdem), 'role': 'left_table'}, {'object_name': path_coe2.name, 'object_type': 'parquet', 'path': str(path_coe2), 'role': 'right_table'}]}, 'parameters': {'join_type': 'left_join', 'join_keys': llave_persona, 'compression': compression, 'overwrite': overwrite, 'strict_keys': strict_keys}, 'output': {'object_name': output_path.name, 'object_type': 'parquet', 'path': str(output_path), 'role': 'dataset_unido_sdem_coe2'}, 'execution_summary': {'filas_resultado': filas_existing, 'registros_cruzados': None, 'registros_sin_coe2': None, 'join_rate_pct': None, 'left_only_rate_pct': None}, 'warnings': [], 'errors': []}
                     _append_period_paradata_step(period, step_info, path_paradata)
                 continue
-            merge_result = merge_period_parquet(periodo=period, path_coe2=path_coe2, path_sdem=path_sdem, cols_coe2=cols_coe2, cols_sdem=cols_sdem, llave_persona=llave_persona, path_out=path_out, equivalences=equivalences, overwrite=overwrite, compression=compression, strict_keys=strict_keys, generate_metadata=generate_metadata, path_paradata=path_paradata)
+            merge_result = merge_period_parquet(periodo=period, path_coe2=path_coe2, path_sdem=path_sdem, cols_coe2=cols_coe2, cols_sdem=cols_sdem, llave_persona=llave_persona, path_out=path_out, equivalences=equivalences, overwrite=overwrite, compression=compression, strict_keys=strict_keys, optional_cols_coe2=optional_cols_coe2, optional_cols_sdem=optional_cols_sdem, generate_metadata=generate_metadata, path_paradata=path_paradata)
             merged_time_series[period] = merge_result['path_output']
             record.update({'estado': 'procesado', 'path_output': merge_result['path_output'], 'filas_sdem': merge_result['filas_sdem'], 'filas_coe2': merge_result['filas_coe2'], 'filas_resultado': merge_result['filas_resultado'], 'columnas_resultado': merge_result['columnas_resultado'], 'nulos_llave_sdem': merge_result['nulos_llave_sdem'], 'nulos_llave_coe2': merge_result['nulos_llave_coe2'], 'duplicados_sdem': merge_result['duplicados_sdem'], 'duplicados_coe2': merge_result['duplicados_coe2'], 'registros_cruzados': merge_result['registros_cruzados'], 'registros_sin_coe2': merge_result['registros_sin_coe2'], 'tasa_cruce_global': merge_result['tasa_cruce_global'], 'OK': True})
             print(f"  Merge completado: {merge_result['filas_resultado']:,} filas")

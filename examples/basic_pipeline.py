@@ -52,21 +52,18 @@ LLAVE_PERSONA = [
 LLAVE_HOGAR = [column for column in LLAVE_PERSONA if column != "n_ren"]
 
 # Replace these lists with the canonical columns required by your pipeline.
-COLS_COE2 = [*LLAVE_PERSONA, "p6_9", "p6b1", "p6b2", "p6c"]
+COLS_COE2 = [
+    *LLAVE_PERSONA,
+    "p6_9", "p6b1", "p6b2", "p6c",
+    "p7", "p7c", "p7f", "p7f_dias", "p7f_horas",
+    "p7g1", "p7g2", "p7g9", "p7gcan",
+]
+OPTIONAL_COLS_COE2 = ["p7f", "p7f_dias", "p7f_horas", "p7g1", "p7g2", "p7g9", "p7gcan"]
 COLS_SDEM = [
     *LLAVE_PERSONA,
-    "r_def",
-    "c_res",
-    "par_c",
-    "sex",
-    "eda",
-    "n_hij",
-    "e_con",
-    "t_loc_tri",
-    "clase2",
-    "pos_ocu",
-    "salario",
-    "fac_tri",
+    "r_def", "c_res", "par_c", "sex", "eda", "n_hij", "e_con",
+    "t_loc_tri", "clase2", "pos_ocu", "salario", "fac_tri",
+    "emp_ppal", "tue_ppal", "hrsocup", "ing_x_hrs", "scian",
 ]
 
 
@@ -100,6 +97,7 @@ def main() -> None:
         cols_sdem=COLS_SDEM,
         llave_persona=LLAVE_PERSONA,
         path_out=PATH_MERGED,
+        optional_cols_coe2=OPTIONAL_COLS_COE2,
         generate_metadata=GENERATE_METADATA,
         path_paradata=PATH_PARADATA,
     )

@@ -352,7 +352,7 @@ def build_historical_analysis_parquet(analysis_sources='../Analisis_PL_parquet',
     if require_complete and missing_periods:
         raise FileNotFoundError(f'Faltan los siguientes periodos solicitados: {missing_periods}')
     if required_columns is None:
-        required_columns = ['periodo', 'anio', 'trimestre', 'id_persona_periodo', 'id_hogar_periodo', 'id_persona', 'id_hogar', 'fac_tri', 'factor_valido', 'ambito', 'lpei', 'ingreso_hogar', 'ingreso_pc', 'ingreso_pc_lpei_ratio', 'entra_calculo_pl', 'pobreza_laboral_persona']
+        required_columns = ['periodo', 'anio', 'trimestre', 'id_persona_periodo', 'id_hogar_periodo', 'id_persona', 'id_hogar', 'fac_tri', 'factor_valido', 'ambito', 'lpei', 'ingreso_hogar', 'ingreso_pc', 'ingreso_pc_lpei_ratio', 'entra_calculo_pl', 'pobreza_laboral_persona', 'emp_ppal', 'tue_ppal', 'hrsocup', 'ing_x_hrs', 'scian', 'p7', 'p7c', 'p7f', 'p7f_dias', 'p7f_horas', 'p7g1', 'p7g2', 'p7g9', 'p7gcan']
     required_columns = [str(column).strip() for column in required_columns]
     audit_records = []
     valid_periods = []
