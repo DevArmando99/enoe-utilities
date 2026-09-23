@@ -64,6 +64,7 @@ COLS_SDEM = [
     "r_def", "c_res", "par_c", "sex", "eda", "n_hij", "e_con",
     "t_loc_tri", "clase2", "pos_ocu", "salario", "fac_tri",
     "emp_ppal", "tue_ppal", "hrsocup", "ing_x_hrs", "scian",
+    "niv_ins", "anios_esc",
 ]
 
 
